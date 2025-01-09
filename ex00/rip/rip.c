@@ -65,8 +65,15 @@ int main(int argc, char **argv) {
 
     char *input = argv[1];
     int len = 0;
-    while (input[len])
+    
+    // Input validation
+    while (input[len]) {
+        if (input[len] != '(' && input[len] != ')') {
+            write(1, "\n", 1);
+            return 1;
+        }
         len++;
+    }
 
     char current[len + 1];
     for (int i = 0; i <= len; i++)
