@@ -19,7 +19,7 @@ void print_solution(char *str) {
         write(1, &str[i], 1);
         i++;
     }
-    write(1, "\n", 2);
+    write(1, " \n", 2);
 }
 
 void remove_parentheses(char *str, int pos, char *current, int removed) {
