@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     if (min_remove == 0)
     {
         ft_putstr(str);
-        write(1, " \n", 1);
+        write(1, "\n", 1);
     }
     else if (min_remove > len)
         write(1, "\n", 1);
