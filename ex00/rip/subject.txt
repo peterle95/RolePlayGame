@@ -1,0 +1,36 @@
+Allowed functions:
+- puts
+- Write
+
+Allowed files:
+- *.c
+- *.h
+
+Write a program that will take as an argument a string containing only parantheses.
+
+If the parantheses are unbalances (for example: "(()"), the program shall remove the minimum number of parantheses for the expression to be balanced.
+By removing we mean replacing by spaces. 
+
+You will then print all the solutions (can be more than one)
+
+The order of the solutions is not important.
+
+For example (x represents a space):
+
+$> ./rip '(()' | cat -e
+((())()) $
+
+$> ./rip '))' | cat -e
+$
+
+$> ./rip '()())()' | cat -e
+()()x() $
+()(x)() $
+(x())() $
+
+$> ./rip '(()(()(' | cat -e
+(()xx)x $
+(x)(x)x $
+(x)x()x $
+x()(x)x $
+x()x()x $
