@@ -65,6 +65,8 @@ int main(int argc, char **argv) {
 
     char *input = argv[1];
     int len = 0;
+    int has_open = 0;
+    int has_close = 0;
     
     // Input validation
     while (input[len]) {
@@ -72,7 +74,17 @@ int main(int argc, char **argv) {
             write(1, "\n", 1);
             return 1;
         }
+        if (input[len] == '(')
+            has_open = 1;
+        if (input[len] == ')')
+            has_close = 1;
         len++;
+    }
+
+    // Check if string contains only one type of parenthesis
+    if (!has_open || !has_close) {
+        write(1, "\n", 1);
+        return 1;
     }
 
     char current[len + 1];
