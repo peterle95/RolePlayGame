@@ -15,7 +15,7 @@ You will then print all the solutions (can be more than one)
 
 The order of the solutions is not important.
 
-For example (x represents a space):
+For example:
 
 $> ./rip '(()' | cat -e
 ((())()) $
@@ -24,13 +24,13 @@ $> ./rip '))' | cat -e
 $
 
 $> ./rip '()())()' | cat -e
-()()x() $
-()(x)() $
-(x())() $
+()() () $
+()( )() $
+( ())() $
 
 $> ./rip '(()(()(' | cat -e
-(()xx)x $
-(x)(x)x $
-(x)x()x $
-x()(x)x $
-x()x()x $
+(() )  $
+( )( )  $
+( ) ()  $
+ ()( )  $
+ () ()  $
