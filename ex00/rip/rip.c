@@ -1,6 +1,30 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+void clean_output(char *str)
+{
+    int i = 0;
+    int j = 0;
+    
+    // Skip leading spaces
+    while (str[i] == ' ')
+        i++;
+        
+    // Copy non-space characters and compress multiple spaces into one
+    while (str[i])
+    {
+        if (str[i] != ' ' || (i > 0 && str[i-1] != ' '))
+            str[j++] = str[i];
+        i++;
+    }
+    
+    // Remove trailing space if exists
+    if (j > 0 && str[j-1] == ' ')
+        j--;
+        
+    str[j] = '\0';
+}
+
 void    ft_putstr(char *str)
 {
     while (*str)
@@ -30,8 +54,9 @@ void try_remove(char *str, int pos, int to_remove, char *result)
     {
         if (is_valid(result))
         {
+            clean_output(result);
             ft_putstr(result);
-            write(1, " \n", 2);
+            write(1, "\n", 1);
         }
         return;
     }
