@@ -28,12 +28,8 @@ void remove_parentheses(char *str, int pos, char *current, int removed) {
             print_solution(current);
         return;
     }
-
-    // Keep current parenthesis
     current[pos] = str[pos];
     remove_parentheses(str, pos + 1, current, removed);
-
-    // Remove current parenthesis (replace with space)
     if (removed > 0 && (str[pos] == '(' || str[pos] == ')')) {
         current[pos] = ' ';
         remove_parentheses(str, pos + 1, current, removed - 1);
@@ -67,8 +63,6 @@ int main(int argc, char **argv) {
     int len = 0;
     int has_open = 0;
     int has_close = 0;
-    
-    // Input validation
     while (input[len]) {
         if (input[len] != '(' && input[len] != ')') {
             write(1, "\n", 1);
@@ -80,23 +74,18 @@ int main(int argc, char **argv) {
             has_close = 1;
         len++;
     }
-
-    // Check if string contains only one type of parenthesis
     if (!has_open || !has_close) {
         write(1, "\n", 1);
         return 1;
     }
-
     char current[len + 1];
     for (int i = 0; i <= len; i++)
         current[i] = input[i];
-
     int min_remove = count_unbalanced(input);
     if (min_remove == 0) {
         print_solution(input);
         return 0;
     }
-
     remove_parentheses(input, 0, current, min_remove);
     return 0;
 }
