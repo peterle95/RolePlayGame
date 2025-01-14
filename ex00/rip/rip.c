@@ -45,8 +45,7 @@ void remove_parentheses(char *str, int pos, char *current, int removed)
 
 int count_unbalanced(char *str) 
 {
-    int open = 0;
-    int unbalanced = 0;
+    int open = 0, unbalanced = 0;
     
     for (int i = 0; str[i]; i++) 
     {
@@ -65,15 +64,14 @@ int count_unbalanced(char *str)
 
 int main(int argc, char **argv) 
 {
+    char *input = argv[1];
+    int len = 0, has_open = 0, has_close = 0;
+    char current[len + 1];
+    int min_remove = count_unbalanced(input);
     if (argc != 2) {
         write(1, "\n", 1);
         return 1;
     }
-
-    char *input = argv[1];
-    int len = 0;
-    int has_open = 0;
-    int has_close = 0;
     while (input[len] != '\0') // or argv[1][len]
     {
         if (input[len] != '(' && input[len] != ')') // or argv[1][len]
@@ -87,20 +85,12 @@ int main(int argc, char **argv)
             has_close = 1;
         len++;
     }
-    if (!has_open || !has_close) 
-    {
-        write(1, "\n", 1);
-        return 1;
-    }
-    char current[len + 1];
+    if (!has_open || !has_close)
+        return (write(1, "\n", 1), 1);
     for (int i = 0; i <= len; i++)
         current[i] = input[i];
-    int min_remove = count_unbalanced(input);
-    if (min_remove == 0) 
-    {
-        print_solution(input);
-        return 0;
-    }
+    if (!min_remove)
+        return (print_solution(input), 0);
     remove_parentheses(input, 0, current, min_remove);
     return 0;
 }
