@@ -74,16 +74,16 @@ int main(int argc, char **argv)
     int len = 0;
     int has_open = 0;
     int has_close = 0;
-    while (input[len]) 
+    while (input[len] != '\0') // or argv[1][len]
     {
-        if (input[len] != '(' && input[len] != ')') 
+        if (input[len] != '(' && input[len] != ')') // or argv[1][len]
         {
             write(1, "\n", 1);
             return 1;
         }
-        if (input[len] == '(')
+        if (input[len] == '(') // or argv[1][len]
             has_open = 1;
-        if (input[len] == ')')
+        if (input[len] == ')') // or argv[1][len]
             has_close = 1;
         len++;
     }
