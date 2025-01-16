@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         write(1, "\n", 1);
         return 1;
     }
-    while (input[len] != '\0') // or argv[1][len]
+    while (input[len]) // or argv[1][len]
     {
         if (input[len] != '(' && input[len] != ')') // or argv[1][len]
         {
