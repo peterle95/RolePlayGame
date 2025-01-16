@@ -17,12 +17,7 @@ int is_balanced(char *str)
 
 void print_solution(char *str) 
 {
-    int i = 0;
-    while (str[i]) 
-    {
-        write(1, &str[i], 1);
-        i++;
-    }
+    while (*str) write(1, str++, 1);
     write(1, " \n", 2);
 }
 
@@ -64,9 +59,8 @@ int count_unbalanced(char *str)
 
 int main(int argc, char **argv) 
 {
-    char *input = argv[1];
     int len = 0, has_open = 0, has_close = 0;
-    char current[len + 1];
+    char *input = argv[1], current[len + 1];
     int min_remove = count_unbalanced(input);
     if (argc != 2) {
         write(1, "\n", 1);
