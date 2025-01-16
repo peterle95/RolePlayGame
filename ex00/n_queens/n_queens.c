@@ -89,20 +89,23 @@ void    solve_nqueens(int *board, int col, int n)
 int     main(int argc, char **argv)
 {
     int n;
-    int *board;
-    
+    // int *board;
+    int board[15];  // Static array with maximum reasonable size
+
     if (argc != 2)
         return (1);
         
     n = atoi(argv[1]);
-    if (n <= 0)
+    /* if (n <= 0)
         return (1);
         
     board = (int *)malloc(sizeof(int) * n);
     if (!board)
+        return (1); */
+    if (n <= 0 || n > 15)  // Add upper bound check
         return (1);
-        
+
     solve_nqueens(board, 0, n);
-    free(board);
+    // free(board);
     return (0);
 }
