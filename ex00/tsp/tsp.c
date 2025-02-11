@@ -1,13 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <float.h>
 #include <math.h>
-#include <malloc.h>
-#include <string.h>
 #include <stdbool.h>
-#include <errno.h>
+#include <string.h>
 
-#define MAX_CITIES 11
-
-typedef struct {
+typedef struct 
+{
     float x;
     float y;
 } City;
@@ -15,7 +14,8 @@ typedef struct {
 // compute the distance between two points
 float distance(float x0, float y0, float x1, float y1) 
 {
-    float diff[2] = {
+    float diff[2] = 
+    {
         x1 - x0, 
         y1 - y0
     };
@@ -23,77 +23,60 @@ float distance(float x0, float y0, float x1, float y1)
     return sqrtf(diff[0] * diff[0] + diff[1] * diff[1]);
 }
 
-// Calculate total path distance for given order of cities
-float calculate_path_length(City *cities, int *path, int n) {
-    float total = 0;
-    for (int i = 0; i < n - 1; i++) {
-        total += distance(
-            cities[path[i]].x, cities[path[i]].y,
-            cities[path[i + 1]].x, cities[path[i + 1]].y
-        );
-    }
-    // Add distance back to start
-    total += distance(
-        cities[path[n - 1]].x, cities[path[n - 1]].y,
-        cities[path[0]].x, cities[path[0]].y
-    );
-    return total;
-}
-
-// Recursive function to try all possible paths
-void find_shortest_path(City *cities, int n, int *curr_path, bool *visited, 
-                       int pos, float *shortest, int *best_path) {
-    if (pos == n) {
-        float length = calculate_path_length(cities, curr_path, n);
-        if (length < *shortest) {
-            *shortest = length;
-            memcpy(best_path, curr_path, n * sizeof(int));
+void permute(int *path, int pos, int n, City *cities, float *minDist, int *bestPath, bool *visited) 
+{
+    if (pos == n) 
+    {
+        float total = 0;
+        for (int i = 0; i < n-1; i++)
+            total += distance(cities[path[i]].x, cities[path[i]].y,
+                            cities[path[i+1]].x, cities[path[i+1]].y);
+        total += distance(cities[path[n-1]].x, cities[path[n-1]].y,
+                        cities[path[0]].x, cities[path[0]].y);
+        
+        if (total < *minDist) 
+        {
+            *minDist = total;
+            memcpy(bestPath, path, n * sizeof(int));
         }
         return;
     }
 
-    for (int i = 0; i < n; i++) {
-        if (!visited[i]) {
+    for (int i = 0; i < n; i++) 
+    {
+        if (!visited[i]) 
+        {
             visited[i] = true;
-            curr_path[pos] = i;
-            find_shortest_path(cities, n, curr_path, visited, pos + 1, shortest, best_path);
+            path[pos] = i;
+            permute(path, pos + 1, n, cities, minDist, bestPath, visited);
             visited[i] = false;
         }
     }
 }
 
-int main(int argc, char **argv) {
-
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <file>\n", argv[0]);
-        return 1;
-    }
-
-    City cities[MAX_CITIES];
+int main(int argc, char **argv) 
+{
+    City cities[11];
     int n = 0;
     float x, y;
-
-    // Read cities
-    while (n < MAX_CITIES && scanf("%f, %f", &x, &y) == 2) {
+    
+    while (n < 11 && fscanf(stdin, "%f, %f", &x, &y) == 2) 
+    {
         cities[n].x = x;
         cities[n].y = y;
         n++;
     }
-
+    
     if (n == 0) return 1;
 
-    // Initialize arrays for path finding
-    int curr_path[MAX_CITIES];
-    int best_path[MAX_CITIES];
-    bool visited[MAX_CITIES] = {false};
-    float shortest = INFINITY;
-
-    // Start with city 0 and try all possible paths
+    int path[n];
+    int bestPath[n];
+    bool visited[n];
+    memset(visited, 0, sizeof(visited));
+    float minDist = FLT_MAX;
     visited[0] = true;
-    curr_path[0] = 0;
-    find_shortest_path(cities, n, curr_path, visited, 1, &shortest, best_path);
-
-    // Print result
-    printf("%.2f\n", shortest);
+    path[0] = 0;
+    permute(path, 1, n, cities, &minDist, bestPath, visited);
+    fprintf(stdout, "%.2f\n", minDist);
     return 0;
 }
