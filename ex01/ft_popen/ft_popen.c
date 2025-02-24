@@ -117,7 +117,7 @@ char *get_next_line(int fd)
 ** main:
 ** Demonstrates the use of ft_popen by executing "ls" and printing its output line by line.
 */
-int main(void)
+/* int main(void)
 {
     int fd = ft_popen("pwd", (const char *[]){"pwd", NULL}, 'r');
     char *line;
@@ -133,4 +133,12 @@ int main(void)
         free(line);
     }
     return 0;
+} */
+
+int main()
+{
+    int fd = ft_popen("ls", (const char *[]) {"ls", NULL}, 'r');
+    char *line;
+    while ((line = get_next_line(fd)))
+        ft_putstr(line);
 }
