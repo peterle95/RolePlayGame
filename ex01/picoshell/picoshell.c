@@ -83,7 +83,7 @@ int picoshell(char **cmds[])
 	return (ret);
 }
 
-int main(int argc, char **argv)
+/* int main(int argc, char **argv)
 {
 	int cmd_size = 1;
 
@@ -110,4 +110,4 @@ int main(int argc, char **argv)
 		perror("picoshell");
 	free(cmds);
 	return ret;
-}
+} */
