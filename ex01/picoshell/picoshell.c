@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -42,29 +41,33 @@ int picoshell(char **cmds[])
 			return (1);
 		if (pid == 0)
 		{
+			// Close all pipe FDs in child FIRST
+			if (!close_pipes(pipes, num_of_processes - 1))
+				exit(1);
+				
+			// Then set up redirections
 			if (i > 0)
 			{
 				if (dup2(pipes[i - 1][0], 0) == -1)
-					exit (1);
+					exit(1);
 			}
 			if (i < num_of_processes - 1)
 			{
 				if (dup2(pipes[i][1], 1) == -1)
-					exit (1);
+					exit(1);
 			}
-			if (!close_pipes(pipes, num_of_processes - 1))
-				exit (1);
 			if (execvp(cmds[i][0], cmds[i]) == -1)
 				exit (1);
 		}
 		i++;
 	}
+	if (!close_pipes(pipes, num_of_processes - 1))
+		return (1);
+	
 	int ret = 0;
 	int status;
 	pid_t child_pid;
 	
-	if (!close_pipes(pipes, num_of_processes - 1))
-		return (1);
 	i = 0;
 	while (i < num_of_processes)
 	{
