@@ -41,11 +41,7 @@ int picoshell(char **cmds[])
 			return (1);
 		if (pid == 0)
 		{
-			// Close all pipe FDs in child FIRST
-			if (!close_pipes(pipes, num_of_processes - 1))
-				exit(1);
-				
-			// Then set up redirections
+			// First set up redirections
 			if (i > 0)
 			{
 				if (dup2(pipes[i - 1][0], 0) == -1)
@@ -56,6 +52,11 @@ int picoshell(char **cmds[])
 				if (dup2(pipes[i][1], 1) == -1)
 					exit(1);
 			}
+			
+			// THEN close all pipes after setting up redirections
+			if (!close_pipes(pipes, num_of_processes - 1))
+				exit(1);
+
 			if (execvp(cmds[i][0], cmds[i]) == -1)
 				exit (1);
 		}
@@ -83,7 +84,7 @@ int picoshell(char **cmds[])
 	return (ret);
 }
 
-/* int main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int cmd_size = 1;
 
@@ -106,8 +107,6 @@ int picoshell(char **cmds[])
 		}
 	}
 	int ret = picoshell(cmds);
-	if (ret)
-		perror("picoshell");
 	free(cmds);
 	return ret;
-} */
+}
