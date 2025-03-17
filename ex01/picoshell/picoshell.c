@@ -41,57 +41,60 @@ int picoshell(char **cmds[])
 		return 1;
 	}
 
-	int pipes[num_cmds - 1][2];
-	for (int i = 0; i < num_cmds - 1; i++) {
-		if (pipe(pipes[i]) == -1) {
-			close_pipes(pipes, i);  // Close all pipes created before this failure
-			return 1;
-		}
-	}
+	int prev_pipe_read = -1;
 	
 	for (int i = 0; i < num_cmds; i++)
 	{
+		int curr_pipe[2];
+		if (i < num_cmds - 1) {
+			if (pipe(curr_pipe) == -1) {
+				close(prev_pipe_read);
+				free(pids);
+				return 1;
+			}
+		}
+
 		pids[i] = fork();
-		if (pids[i] == -1)
-		{
-			// Cleanup on fork failure
-			close_pipes(pipes, num_cmds - 1);
+		if (pids[i] == -1) {
+			close(prev_pipe_read);
+			if (i < num_cmds - 1) {
+				close(curr_pipe[0]);
+				close(curr_pipe[1]);
+			}
 			free(pids);
 			return 1;
 		}
-		if (pids[i] == 0)
-		{
+		if (pids[i] == 0) {
+			// Child process
+			if (i > 0) {
+				if (dup2(prev_pipe_read, 0) == -1) exit(1);
+				close(prev_pipe_read);
+			}
+			if (i < num_cmds - 1) {
+				if (dup2(curr_pipe[1], 1) == -1) exit(1);
+				close(curr_pipe[1]);
+			}
+			// Close potential inherited FDs from previous pipes
+			if (i < num_cmds - 1) close(curr_pipe[0]);
+			
 			// Validate command exists and has at least one argument
 			if (cmds[i] == NULL || cmds[i][0] == NULL) {
 				exit(1);
-			}
-
-			// Redirect STDIN
-			if (i > 0 && dup2(pipes[i - 1][0], 0) == -1)
-				exit(1);
-			
-			// Redirect STDOUT
-			if (i < num_cmds - 1 && dup2(pipes[i][1], 1) == -1)
-				exit(1);
-			
-			// Close pipe ends
-			for (int j = 0; j < num_cmds - 1; j++)
-			{
-				if (!(i > 0 && j == i - 1))
-					close(pipes[j][0]);
-				if (!(i < num_cmds - 1 && j == i))
-					close(pipes[j][1]);
 			}
 			
 			// Execute command
 			execvp(cmds[i][0], cmds[i]);
 			exit(1);  // Only reach here if execvp fails
 		}
+		else {
+			// Parent process
+			if (i > 0) close(prev_pipe_read);
+			if (i < num_cmds - 1) {
+				close(curr_pipe[1]);
+				prev_pipe_read = curr_pipe[0];
+			}
+		}
 	}
-	
-	// Parent process: close all pipe file descriptors.
-	if (!close_pipes(pipes, num_cmds - 1))
-		return 1;
 	
 	int ret = 0;
 	int status;
