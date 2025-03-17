@@ -24,6 +24,7 @@ int picoshell(char **cmds[])
 	int i = 0;
 	int num_of_processes = 0;
 	int pid;
+	int pids[1024]; // Array to store child process IDs for ordered waiting
 
 	while (cmds[num_of_processes])
 		num_of_processes++;
@@ -60,6 +61,7 @@ int picoshell(char **cmds[])
 			if (execvp(cmds[i][0], cmds[i]) == -1)
 				exit (1);
 		}
+		pids[i] = pid; // Store child PID for ordered waiting
 		i++;
 	}
 	if (!close_pipes(pipes, num_of_processes - 1))
@@ -67,19 +69,16 @@ int picoshell(char **cmds[])
 	
 	int ret = 0;
 	int status;
-	pid_t child_pid;
 	
-	i = 0;
-	while (i < num_of_processes)
+	// Wait for child processes in order
+	for (i = 0; i < num_of_processes; i++)
 	{
-		child_pid = wait(&status);
-		if (child_pid == -1)
+		if (waitpid(pids[i], &status, 0) == -1)
 			return (1);
 		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 			ret = 1;
 		else if (!WIFEXITED(status))
 			ret = 1;
-		i++;
 	}
 	return (ret);
 }
