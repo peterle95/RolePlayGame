@@ -31,8 +31,12 @@ void close_unused_fds(int keep_stdin, int keep_stdout) {
 int picoshell(char **cmds[])
 {
 	int num_cmds = 0;
-	// Count number of commands
-	while (cmds[num_cmds] != NULL) {
+	// Count commands and check for premature NULL command arrays.
+	while (cmds[num_cmds] != NULL)
+	{
+		// If a command array is empty, that's a malformed pipeline.
+		if (cmds[num_cmds][0] == NULL)
+			return 1;  // Early error: encountered a NULL in the middle.
 		num_cmds++;
 	}
 	
@@ -40,7 +44,7 @@ int picoshell(char **cmds[])
 	if (!pids) {
 		return 1;
 	}
-
+	
 	int prev_pipe_read = -1;
 	
 	for (int i = 0; i < num_cmds; i++)
@@ -53,7 +57,7 @@ int picoshell(char **cmds[])
 				return 1;
 			}
 		}
-
+	
 		pids[i] = fork();
 		if (pids[i] == -1) {
 			close(prev_pipe_read);
@@ -67,28 +71,29 @@ int picoshell(char **cmds[])
 		if (pids[i] == 0) {
 			// Child process
 			if (i > 0) {
-				if (dup2(prev_pipe_read, 0) == -1) exit(1);
+				if (dup2(prev_pipe_read, 0) == -1)
+					exit(1);
 				close(prev_pipe_read);
 			}
 			if (i < num_cmds - 1) {
-				if (dup2(curr_pipe[1], 1) == -1) exit(1);
+				if (dup2(curr_pipe[1], 1) == -1)
+					exit(1);
 				close(curr_pipe[1]);
 			}
-			// Close potential inherited FDs from previous pipes
-			if (i < num_cmds - 1) close(curr_pipe[0]);
+			if (i < num_cmds - 1)
+				close(curr_pipe[0]);
 			
-			// Validate command exists and has at least one argument
-			if (cmds[i] == NULL || cmds[i][0] == NULL) {
+			// Defensive check even though pre-validated in main loop.
+			if (cmds[i] == NULL || cmds[i][0] == NULL)
 				exit(1);
-			}
 			
-			// Execute command
 			execvp(cmds[i][0], cmds[i]);
-			exit(1);  // Only reach here if execvp fails
+			exit(1);  // Only reached if execvp fails.
 		}
 		else {
 			// Parent process
-			if (i > 0) close(prev_pipe_read);
+			if (i > 0)
+				close(prev_pipe_read);
 			if (i < num_cmds - 1) {
 				close(curr_pipe[1]);
 				prev_pipe_read = curr_pipe[0];
@@ -96,18 +101,32 @@ int picoshell(char **cmds[])
 		}
 	}
 	
-	int ret = 0;
+	// Instead of mapping any nonzero exit to 1,
+	// we now report the exit status from the last failing child.
+	// If all children succeed, final_status remains 0.
+	int final_status = 0;
 	int status;
 	for (int i = 0; i < num_cmds; i++)
 	{
 		if (waitpid(pids[i], &status, 0) == -1)
+		{
+			free(pids);
 			return 1;
-		if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) || !WIFEXITED(status))
-			ret = 1;
+		}
+		if (WIFEXITED(status))
+		{
+			int exit_status = WEXITSTATUS(status);
+			if (exit_status != 0)
+				final_status = exit_status;
+		}
+		else {
+			// Abnormal termination is reported as an error (1)
+			final_status = 1;
+		}
 	}
 	
 	free(pids);
-	return ret;
+	return final_status;
 }
 
 int main(int argc, char **argv)
