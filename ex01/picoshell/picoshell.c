@@ -30,25 +30,28 @@ void close_unused_fds(int keep_stdin, int keep_stdout) {
 
 int picoshell(char **cmds[])
 {
-	int num_of_processes = 0;
-	int pid;
-	int pids[1024];
+	int num_cmds = 0;
+	// Count number of commands
+	while (cmds[num_cmds] != NULL) {
+		num_cmds++;
+	}
+	
+	pid_t *pids = malloc(sizeof(pid_t) * num_cmds);
+	if (!pids) {
+		return 1;
+	}
 
-	// Count the number of commands.
-	while (cmds[num_of_processes])
-		num_of_processes++;
-
-	int pipes[num_of_processes - 1][2];
-	for (int i = 0; i < num_of_processes - 1; i++) {
+	int pipes[num_cmds - 1][2];
+	for (int i = 0; i < num_cmds - 1; i++) {
 		if (pipe(pipes[i]) == -1)
 			return 1;
 	}
 	
-	for (int i = 0; i < num_of_processes; i++)
+	for (int i = 0; i < num_cmds; i++)
 	{
-		if ((pid = fork()) == -1)
+		if ((pids[i] = fork()) == -1)
 			return 1;
-		if (pid == 0)
+		if (pids[i] == 0)
 		{
 			// Validate command exists and has at least one argument
 			if (cmds[i] == NULL || cmds[i][0] == NULL) {
@@ -60,15 +63,15 @@ int picoshell(char **cmds[])
 				exit(1);
 			
 			// Redirect STDOUT
-			if (i < num_of_processes - 1 && dup2(pipes[i][1], 1) == -1)
+			if (i < num_cmds - 1 && dup2(pipes[i][1], 1) == -1)
 				exit(1);
 			
 			// Close pipe ends
-			for (int j = 0; j < num_of_processes - 1; j++)
+			for (int j = 0; j < num_cmds - 1; j++)
 			{
 				if (!(i > 0 && j == i - 1))
 					close(pipes[j][0]);
-				if (!(i < num_of_processes - 1 && j == i))
+				if (!(i < num_cmds - 1 && j == i))
 					close(pipes[j][1]);
 			}
 			
@@ -76,16 +79,15 @@ int picoshell(char **cmds[])
 			execvp(cmds[i][0], cmds[i]);
 			exit(1);  // Only reach here if execvp fails
 		}
-		pids[i] = pid;
 	}
 	
 	// Parent process: close all pipe file descriptors.
-	if (!close_pipes(pipes, num_of_processes - 1))
+	if (!close_pipes(pipes, num_cmds - 1))
 		return 1;
 	
 	int ret = 0;
 	int status;
-	for (int i = 0; i < num_of_processes; i++)
+	for (int i = 0; i < num_cmds; i++)
 	{
 		if (waitpid(pids[i], &status, 0) == -1)
 			return 1;
@@ -93,6 +95,7 @@ int picoshell(char **cmds[])
 			ret = 1;
 	}
 	
+	free(pids);
 	return ret;
 }
 
