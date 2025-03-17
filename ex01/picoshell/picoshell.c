@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-int  close_pipes(int pipes[][2], int num)
+int close_pipes(int pipes[][2], int num)
 {
 	int i = 0;
 	int status = 1;
@@ -19,68 +19,76 @@ int  close_pipes(int pipes[][2], int num)
 	return (status);
 }
 
+// Helper to close extra file descriptors, if desired.
+void close_unused_fds(int keep_stdin, int keep_stdout) {
+	for (int fd = 3; fd < 1024; fd++) {
+		if ((keep_stdin && fd == 0) || (keep_stdout && fd == 1) || fd == 2)
+			continue;
+		close(fd);
+	}
+}
+
 int picoshell(char **cmds[])
 {
-	int i = 0;
 	int num_of_processes = 0;
 	int pid;
-	int pids[1024]; // Array to store child process IDs for ordered waiting
+	int pids[1024];
 
+	// Count the number of commands.
 	while (cmds[num_of_processes])
 		num_of_processes++;
+
 	int pipes[num_of_processes - 1][2];
-	while (i < num_of_processes - 1)
-	{
+	for (int i = 0; i < num_of_processes - 1; i++) {
 		if (pipe(pipes[i]) == -1)
-			return (1);
-		i++;
+			return 1;
 	}
-	i = 0;
-	while (i < num_of_processes)
+	
+	for (int i = 0; i < num_of_processes; i++)
 	{
 		if ((pid = fork()) == -1)
-			return (1);
+			return 1;
 		if (pid == 0)
 		{
-			// First set up redirections
-			if (i > 0)
+			// Redirect STDIN
+			if (i > 0 && dup2(pipes[i - 1][0], 0) == -1)
+				exit(1);
+			
+			// Redirect STDOUT
+			if (i < num_of_processes - 1 && dup2(pipes[i][1], 1) == -1)
+				exit(1);
+			
+			// Close pipe ends
+			for (int j = 0; j < num_of_processes - 1; j++)
 			{
-				if (dup2(pipes[i - 1][0], 0) == -1)
-					exit(1);
-			}
-			if (i < num_of_processes - 1)
-			{
-				if (dup2(pipes[i][1], 1) == -1)
-					exit(1);
+				if (!(i > 0 && j == i - 1))
+					close(pipes[j][0]);
+				if (!(i < num_of_processes - 1 && j == i))
+					close(pipes[j][1]);
 			}
 			
-			// THEN close all pipes after setting up redirections
-			if (!close_pipes(pipes, num_of_processes - 1))
-				exit(1);
-
-			if (execvp(cmds[i][0], cmds[i]) == -1)
-				exit (1);
+			// Execute command
+			execvp(cmds[i][0], cmds[i]);
+			exit(1);  // Only reach here if execvp fails
 		}
-		pids[i] = pid; // Store child PID for ordered waiting
-		i++;
+		pids[i] = pid;
 	}
+	
+	// Parent process: close all pipe file descriptors.
 	if (!close_pipes(pipes, num_of_processes - 1))
-		return (1);
+		return 1;
 	
 	int ret = 0;
 	int status;
-	
-	// Wait for child processes in order
-	for (i = 0; i < num_of_processes; i++)
+	for (int i = 0; i < num_of_processes; i++)
 	{
 		if (waitpid(pids[i], &status, 0) == -1)
-			return (1);
-		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-			ret = 1;
-		else if (!WIFEXITED(status))
+			return 1;
+		if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) || !WIFEXITED(status))
 			ret = 1;
 	}
-	return (ret);
+	
+	return ret;
 }
 
 int main(int argc, char **argv)
