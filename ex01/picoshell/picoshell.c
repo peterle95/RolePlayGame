@@ -50,6 +50,11 @@ int picoshell(char **cmds[])
 			return 1;
 		if (pid == 0)
 		{
+			// Validate command exists and has at least one argument
+			if (cmds[i] == NULL || cmds[i][0] == NULL) {
+				exit(1);
+			}
+
 			// Redirect STDIN
 			if (i > 0 && dup2(pipes[i - 1][0], 0) == -1)
 				exit(1);
