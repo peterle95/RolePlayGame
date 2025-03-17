@@ -19,8 +19,8 @@ int close_pipes(int pipes[][2], int num)
 	return (status);
 }
 
-// Helper to close extra file descriptors, if desired.
-void close_unused_fds(int keep_stdin, int keep_stdout) {
+void close_unused_fds(int keep_stdin, int keep_stdout) 
+{
 	for (int fd = 3; fd < 1024; fd++) {
 		if ((keep_stdin && fd == 0) || (keep_stdout && fd == 1) || fd == 2)
 			continue;
@@ -31,27 +31,26 @@ void close_unused_fds(int keep_stdin, int keep_stdout) {
 int picoshell(char **cmds[])
 {
 	int num_cmds = 0;
-	// Count commands and check for premature NULL command arrays.
 	while (cmds[num_cmds] != NULL)
 	{
-		// If a command array is empty, that's a malformed pipeline.
-		if (cmds[num_cmds][0] == NULL)
-			return 1;  // Early error: encountered a NULL in the middle.
+		if (cmds[num_cmds][0] == NULL || cmds[num_cmds][0][0] == '\0')
+			return 1;
 		num_cmds++;
 	}
 	
 	pid_t *pids = malloc(sizeof(pid_t) * num_cmds);
-	if (!pids) {
+	if (!pids) 
 		return 1;
-	}
 	
 	int prev_pipe_read = -1;
 	
 	for (int i = 0; i < num_cmds; i++)
 	{
 		int curr_pipe[2];
-		if (i < num_cmds - 1) {
-			if (pipe(curr_pipe) == -1) {
+		if (i < num_cmds - 1) 
+		{
+			if (pipe(curr_pipe) == -1) 
+			{
 				close(prev_pipe_read);
 				free(pids);
 				return 1;
@@ -59,23 +58,26 @@ int picoshell(char **cmds[])
 		}
 	
 		pids[i] = fork();
-		if (pids[i] == -1) {
+		if (pids[i] == -1) 
+		{
 			close(prev_pipe_read);
-			if (i < num_cmds - 1) {
+			if (i < num_cmds - 1) 
+			{
 				close(curr_pipe[0]);
 				close(curr_pipe[1]);
 			}
 			free(pids);
 			return 1;
 		}
-		if (pids[i] == 0) {
-			// Child process
+		if (pids[i] == 0) 
+		{
 			if (i > 0) {
 				if (dup2(prev_pipe_read, 0) == -1)
 					exit(1);
 				close(prev_pipe_read);
 			}
-			if (i < num_cmds - 1) {
+			if (i < num_cmds - 1) 
+			{
 				if (dup2(curr_pipe[1], 1) == -1)
 					exit(1);
 				close(curr_pipe[1]);
@@ -83,15 +85,16 @@ int picoshell(char **cmds[])
 			if (i < num_cmds - 1)
 				close(curr_pipe[0]);
 			
-			// Defensive check even though pre-validated in main loop.
-			if (cmds[i] == NULL || cmds[i][0] == NULL)
+			close_unused_fds((i == 0), (i == num_cmds - 1));
+			
+			if (cmds[i] == NULL || cmds[i][0] == NULL || cmds[i][0][0] == '\0')
 				exit(1);
 			
 			execvp(cmds[i][0], cmds[i]);
-			exit(1);  // Only reached if execvp fails.
+			exit(1);
 		}
-		else {
-			// Parent process
+		else 
+		{
 			if (i > 0)
 				close(prev_pipe_read);
 			if (i < num_cmds - 1) {
@@ -100,10 +103,7 @@ int picoshell(char **cmds[])
 			}
 		}
 	}
-	
-	// Instead of mapping any nonzero exit to 1,
-	// we now report the exit status from the last failing child.
-	// If all children succeed, final_status remains 0.
+
 	int final_status = 0;
 	int status;
 	for (int i = 0; i < num_cmds; i++)
@@ -117,10 +117,10 @@ int picoshell(char **cmds[])
 		{
 			int exit_status = WEXITSTATUS(status);
 			if (exit_status != 0)
-				final_status = exit_status;
+				final_status = 1;
 		}
-		else {
-			// Abnormal termination is reported as an error (1)
+		else 
+		{
 			final_status = 1;
 		}
 	}
