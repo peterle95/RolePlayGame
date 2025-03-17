@@ -43,14 +43,22 @@ int picoshell(char **cmds[])
 
 	int pipes[num_cmds - 1][2];
 	for (int i = 0; i < num_cmds - 1; i++) {
-		if (pipe(pipes[i]) == -1)
+		if (pipe(pipes[i]) == -1) {
+			close_pipes(pipes, i);  // Close all pipes created before this failure
 			return 1;
+		}
 	}
 	
 	for (int i = 0; i < num_cmds; i++)
 	{
-		if ((pids[i] = fork()) == -1)
+		pids[i] = fork();
+		if (pids[i] == -1)
+		{
+			// Cleanup on fork failure
+			close_pipes(pipes, num_cmds - 1);
+			free(pids);
 			return 1;
+		}
 		if (pids[i] == 0)
 		{
 			// Validate command exists and has at least one argument
