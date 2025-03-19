@@ -55,12 +55,19 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 				if (verbose)
 					printf("Bad function: timed out after %u seconds\n", timeout);
 				kill(pid, SIGKILL);
-				waitpid(pid, &status, 0);
+				// Wait until child is reaped (handle EINTR)
+				while (waitpid(pid, &status, 0) == -1 && errno == EINTR)
+					;
 				ret = 0;
 				break;
 			}
 			else if (errno == EINTR)
+			{
+				// Retry waitpid if interrupted by other signals
+				if (waitpid(pid, &status, WNOHANG) == -1 && errno != EINTR)
+					break;
 				continue;
+			}
 			else
 			{
 				ret = -1;
@@ -108,6 +115,26 @@ void exit_nonzero_func(void) {
     exit(42); // Explicit non-zero exit
 }
 
+void abort_func(void) {
+    abort();  // Raises SIGABRT
+}
+
+void close_call_func(void) {
+    sleep(1);  // With 2 second timeout, this should succeed
+}
+
+void memory_hog_func(void) {
+    void *p;
+    while ((p = malloc(1024 * 1024 * 10))) {
+        memset(p, 0, 1024 * 1024 * 10);
+    }
+}
+
+void signal_ignorer_func(void) {
+    signal(SIGTERM, SIG_IGN);
+    while(1);
+}
+
 int main(void) {
     printf("=== Test successful function ===\n");
     sandbox(good_func, 2, true);
@@ -120,6 +147,18 @@ int main(void) {
     
     printf("\n=== Test non-zero exit ===\n");
     sandbox(exit_nonzero_func, 2, true);
+    
+    printf("\n=== Test abort function ===\n");
+    sandbox(abort_func, 2, true);
+    
+    printf("\n=== Test close call function ===\n");
+    sandbox(close_call_func, 2, true);
+    
+    printf("\n=== Test memory hog function ===\n");
+    sandbox(memory_hog_func, 2, true);
+    
+    printf("\n=== Test signal ignorer function ===\n");
+    sandbox(signal_ignorer_func, 2, true);
 
     return 0;
 }
