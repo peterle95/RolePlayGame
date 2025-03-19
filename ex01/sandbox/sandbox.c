@@ -24,9 +24,19 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 
 	g_to = 0;
 	sa_to.sa_handler = handle_timeout;
-	sigemptyset(&sa_to.sa_mask);
-	sigaction(SIGALRM, &sa_to, NULL);
-
+	if (sigemptyset(&sa_to.sa_mask) == -1)
+	{
+		if (verbose)
+			perror("sigemptyset failed");
+		return (-1);
+	}
+	if (sigaction(SIGALRM, &sa_to, NULL) == -1)
+	{
+		if (verbose)
+			perror("sigaction failed");
+		return (-1);
+	}
+	
 	if ((pid = fork()) == -1)
 		return (-1);
 	if (pid == 0)
@@ -82,7 +92,7 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 	return (ret);
 }
 
-/* void good_func(void) {
+void good_func(void) {
     // This should work
 }
 
@@ -90,12 +100,26 @@ void bad_func(void) {
     while(1); // Infinite loop
 }
 
+void segfault_func(void) {
+    *(int *)0 = 42; // Intentional segmentation fault
+}
+
+void exit_nonzero_func(void) {
+    exit(42); // Explicit non-zero exit
+}
+
 int main(void) {
-    printf("Testing good function:\n");
-    int result1 = sandbox(good_func, 2, true);
+    printf("=== Test successful function ===\n");
+    sandbox(good_func, 2, true);
     
-    printf("\nTesting timeout:\n");
-    int result2 = sandbox(bad_func, 2, true);
+    printf("\n=== Test timeout ===\n");
+    sandbox(bad_func, 2, true);
     
+    printf("\n=== Test segmentation fault ===\n");
+    sandbox(segfault_func, 2, true);
+    
+    printf("\n=== Test non-zero exit ===\n");
+    sandbox(exit_nonzero_func, 2, true);
+
     return 0;
-} */
+}
