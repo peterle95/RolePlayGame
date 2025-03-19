@@ -93,6 +93,7 @@ int picoshell(char **cmds[])
 
 	int final_status = 0;
 	int status;
+	/*
 	for (int i = 0; i < num_cmds; i++)
 	{
 		if (waitpid(pids[i], &status, 0) == -1)
@@ -103,6 +104,12 @@ int picoshell(char **cmds[])
 			final_status |= exit_status != 0;
 		}
 		else 
+			final_status = 1;
+	}
+	*/
+	for (int i = 0; i < num_cmds; i++)
+	{
+		if (waitpid(pids[i], &status, 0) == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			final_status = 1;
 	}
 	
