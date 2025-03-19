@@ -94,6 +94,7 @@ char *get_next_line(int fd)
     return line;
 }
 
+// SUBJECT MAIN
 int main()
 {
     int fd = ft_popen("ls", (const char *[]) {"ls", NULL}, 'r');
@@ -101,3 +102,45 @@ int main()
     while ((line = get_next_line(fd)))
         ft_putstr(line);
 }
+
+//IMPLEMENTATION WHERE FDs ARE NOT LEAKED
+/* int main()
+{
+    int fd = ft_popen("ls", (const char *[]) {"ls", NULL}, 'r');
+    if (fd == -1) {
+        write(2, "Error in ft_popen\n", 18);
+        return 1;
+    }
+    char *line;
+    while ((line = get_next_line(fd)))
+    {
+        ft_putstr(line);
+        free(line);
+    }
+    close(fd);
+    return 0;
+} */
+
+//CHAIN COMMANDS
+/* int main()
+{
+    int fd1 = ft_popen("ls", (const char *[]){"ls", NULL}, 'r');
+    char *content = get_next_line(fd1);
+    close(fd1);
+    
+    int fd2 = ft_popen("wc", (const char *[]){"wc", NULL}, 'w');
+    write(fd2, content, strlen(content));
+    close(fd2);
+    free(content);
+    return 0;
+} */
+
+//STREAM DATA TO ANOTHER PROGRAM
+/* int main()
+{
+    // Write to a command
+    int fd = ft_popen("grep hello", (const char *[]){"grep", "hello", NULL}, 'w');
+    write(fd, "hello world\n", 12);
+    close(fd);
+    return 0;
+} */
