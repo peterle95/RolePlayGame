@@ -3,26 +3,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-int close_pipes(int pipes[][2], int num)
-{
-	int i = 0;
-	int status = 1;
-
-	while (i < num)
-	{
-		if (close(pipes[i][0]) == -1)
-			status = 0;
-		if (close(pipes[i][1]) == -1)
-			status = 0;
-		i++;
-	}
-	return (status);
-}
-
 void close_unused_fds(int keep_stdin, int keep_stdout) 
 {
-	for (int fd = 3; fd < 1024; fd++) {
-		if ((keep_stdin && fd == 0) || (keep_stdout && fd == 1) || fd == 2)
+	for (int fd = 0; fd < 1024; fd++) {
+		if ((fd == 0 && keep_stdin) || (fd == 1 && keep_stdout) || fd == 2)
 			continue;
 		close(fd);
 	}
@@ -52,6 +36,10 @@ int picoshell(char **cmds[])
 			if (pipe(curr_pipe) == -1) 
 			{
 				close(prev_pipe_read);
+				// Wait for any existing children before failing
+				for (int j = 0; j < i; j++) {
+					waitpid(pids[j], NULL, 0);
+				}
 				free(pids);
 				return 1;
 			}
@@ -66,6 +54,8 @@ int picoshell(char **cmds[])
 				close(curr_pipe[0]);
 				close(curr_pipe[1]);
 			}
+			for (int j = 0; j < i; j++) 
+				waitpid(pids[j], NULL, 0);
 			free(pids);
 			return 1;
 		}
@@ -87,9 +77,6 @@ int picoshell(char **cmds[])
 			
 			close_unused_fds((i == 0), (i == num_cmds - 1));
 			
-			if (cmds[i] == NULL || cmds[i][0] == NULL || cmds[i][0][0] == '\0')
-				exit(1);
-			
 			execvp(cmds[i][0], cmds[i]);
 			exit(1);
 		}
@@ -109,20 +96,14 @@ int picoshell(char **cmds[])
 	for (int i = 0; i < num_cmds; i++)
 	{
 		if (waitpid(pids[i], &status, 0) == -1)
-		{
-			free(pids);
-			return 1;
-		}
-		if (WIFEXITED(status))
+			final_status = 1;  // Mark error but continue waiting for others
+		else if (WIFEXITED(status))
 		{
 			int exit_status = WEXITSTATUS(status);
-			if (exit_status != 0)
-				final_status = 1;
+			final_status |= exit_status != 0;
 		}
 		else 
-		{
 			final_status = 1;
-		}
 	}
 	
 	free(pids);
