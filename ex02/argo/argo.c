@@ -36,11 +36,22 @@ int	expect(FILE *stream, char c)
 int	parse_int(json *dst, FILE *stream)
 {
 	int n = 0;
-
-	fscanf(stream, "%d", &n);
+	int c = peek(stream);
+	
+	if (!isdigit(c)) {
+		unexpected(stream);
+		return -1;
+	}
+	
+	while (isdigit(c)) {
+		getc(stream); // consume digit
+		n = n * 10 + (c - '0');
+		c = peek(stream);
+	}
+	
 	dst->type = INTEGER;
 	dst->integer = n;
-	return (1);
+	return 1;
 }
 
 char *get_str(FILE *stream)

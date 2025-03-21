@@ -1,4 +1,3 @@
-
 #include "argo.h"
 
 void	free_json(json j)
