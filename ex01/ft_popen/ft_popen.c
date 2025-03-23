@@ -1,8 +1,7 @@
 #include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>  // For execvp prototype
 
+// devi pushare solo questa funzione
 int ft_popen(const char *file, const char *argv[], char type)
 {
     int fd[2];
