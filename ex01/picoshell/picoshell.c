@@ -3,11 +3,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-void close_unused_fds(int keep_stdin, int keep_stdout) 
+void close_unused_fds(void) 
 {
-	for (int fd = 0; fd < 1024; fd++) {
-		if ((fd == 0 && keep_stdin) || (fd == 1 && keep_stdout) || fd == 2)
-			continue;
+	for (int fd = 3; fd < 1024; fd++) {
 		close(fd);
 	}
 }
@@ -22,9 +20,7 @@ int picoshell(char **cmds[])
 		num_cmds++;
 	}
 	
-	pid_t *pids = malloc(sizeof(pid_t) * num_cmds);
-	if (!pids) 
-		return 1;
+	pid_t pids[num_cmds];  // Stack allocation instead of malloc
 	
 	int prev_pipe_read = -1;
 	
@@ -40,13 +36,12 @@ int picoshell(char **cmds[])
 				for (int j = 0; j < i; j++) {
 					waitpid(pids[j], NULL, 0);
 				}
-				free(pids);
 				return 1;
 			}
 		}
 	
 		pids[i] = fork();
-		if (pids[i] == -1) 
+		if ((pids[i] == -1)) 
 		{
 			close(prev_pipe_read);
 			if (i < num_cmds - 1) 
@@ -56,7 +51,6 @@ int picoshell(char **cmds[])
 			}
 			for (int j = 0; j < i; j++) 
 				waitpid(pids[j], NULL, 0);
-			free(pids);
 			return 1;
 		}
 		if (pids[i] == 0) 
@@ -75,7 +69,7 @@ int picoshell(char **cmds[])
 			if (i < num_cmds - 1)
 				close(curr_pipe[0]);
 			
-			close_unused_fds((i == 0), (i == num_cmds - 1));
+			close_unused_fds();
 			
 			execvp(cmds[i][0], cmds[i]);
 			exit(1);
@@ -113,7 +107,6 @@ int picoshell(char **cmds[])
 			final_status = 1;
 	}
 	
-	free(pids);
 	return final_status;
 }
 
