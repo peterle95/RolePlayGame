@@ -3,14 +3,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-// maybe you don't need to push this?
-/* void close_unused_fds(void) 
-{
-	for (int fd = 3; fd < 1024; fd++) {
-		close(fd);
-	}
-} */
-
 int picoshell(char **cmds[])
 {
 	int num_cmds = 0;
@@ -36,10 +28,9 @@ int picoshell(char **cmds[])
 			if (pipe(curr_pipe) == -1) 
 			{
 				close(prev_pipe_read);
-				// Wait for any existing children before failing
-				for (int j = 0; j < i; j++) {
+
+				for (int j = 0; j < i; j++) 
 					waitpid(pids[j], NULL, 0);
-				}
 				return 1;
 			}
 		}
@@ -82,7 +73,8 @@ int picoshell(char **cmds[])
 		{
 			if (i > 0)
 				close(prev_pipe_read);
-			if (i < num_cmds - 1) {
+			if (i < num_cmds - 1) 
+			{
 				close(curr_pipe[1]);
 				prev_pipe_read = curr_pipe[0];
 			}
