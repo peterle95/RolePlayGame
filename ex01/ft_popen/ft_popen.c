@@ -95,22 +95,22 @@ char *get_next_line(int fd)
 }
 
 // SUBJECT MAIN
-int main()
+/* int main() 
 {
     int fd = ft_popen("ls", (const char *[]) {"ls", NULL}, 'r');
     char *line;
     while ((line = get_next_line(fd)))
         ft_putstr(line);
-}
+} */
 
 //IMPLEMENTATION WHERE FDs ARE NOT LEAKED
-/* int main()
+int main()
 {
     int fd = ft_popen("ls", (const char *[]) {"ls", NULL}, 'r');
     if (fd == -1) {
         write(2, "Error in ft_popen\n", 18);
         return 1;
-    }
+    }          
     char *line;
     while ((line = get_next_line(fd)))
     {
@@ -119,7 +119,7 @@ int main()
     }
     close(fd);
     return 0;
-} */
+}
 
 //CHAIN COMMANDS
 /* int main()

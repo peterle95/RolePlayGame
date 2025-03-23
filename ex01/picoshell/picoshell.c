@@ -107,7 +107,7 @@ int picoshell(char **cmds[])
 			final_status = 1;
 	}
 	*/
-	for (int i = 0; i < num_cmds; i++)
+  	for (int i = 0; i < num_cmds; i++)
 	{
 		if (waitpid(pids[i], &status, 0) == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			final_status = 1;

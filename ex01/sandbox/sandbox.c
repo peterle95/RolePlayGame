@@ -155,7 +155,7 @@ int main(void) {
     sandbox(close_call_func, 2, true);
     
     printf("\n=== Test memory hog function ===\n");
-    sandbox(memory_hog_func, 2, true);
+    sandbox(memory_hog_func, 2, true); 
     
     printf("\n=== Test signal ignorer function ===\n");
     sandbox(signal_ignorer_func, 2, true);
