@@ -20,6 +20,9 @@ int picoshell(char **cmds[])
 		num_cmds++;
 	}
 	
+	if (num_cmds == 0)
+		return 1;
+
 	pid_t pids[num_cmds];  // Stack allocation instead of malloc
 	
 	int prev_pipe_read = -1;
@@ -65,9 +68,8 @@ int picoshell(char **cmds[])
 				if (dup2(curr_pipe[1], 1) == -1)
 					exit(1);
 				close(curr_pipe[1]);
-			}
-			if (i < num_cmds - 1)
 				close(curr_pipe[0]);
+			}
 			
 			close_unused_fds();
 			
@@ -101,7 +103,7 @@ int picoshell(char **cmds[])
 			final_status = 1;
 	}
 	*/
-  	for (int i = 0; i < num_cmds; i++)
+  	for (int i = 0; i < num_cmds; i++) // everything marked as 1 when error
 	{
 		if (waitpid(pids[i], &status, 0) == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
 			final_status = 1;
