@@ -3,12 +3,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-void close_unused_fds(void) 
+// maybe you don't need to push this?
+/* void close_unused_fds(void) 
 {
 	for (int fd = 3; fd < 1024; fd++) {
 		close(fd);
 	}
-}
+} */
 
 int picoshell(char **cmds[])
 {
@@ -71,8 +72,9 @@ int picoshell(char **cmds[])
 				close(curr_pipe[0]);
 			}
 			
-			close_unused_fds();
-			
+			for (int fd = 3; fd < 1024; fd++)
+				close(fd);
+	
 			execvp(cmds[i][0], cmds[i]);
 			exit(1);
 		}
