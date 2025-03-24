@@ -56,12 +56,14 @@ int parse_int(json *dst, FILE *stream)
 	int n = 0;
 	int c = peek(stream);
 	
-	if (!isdigit(c)) {
+	if (!isdigit(c)) 
+	{
 		unexpected(stream);
 		return -1;
 	}
 	
-	while (isdigit(c)) {
+	while (isdigit(c)) 
+	{
 		getc(stream);
 		n = n * 10 + (c - '0');
 		c = peek(stream);
@@ -83,7 +85,8 @@ char *get_str(FILE *stream)
 		return NULL;
 
 	int c = getc(stream);
-	if (c != '"') {
+	if (c != '"') 
+	{
 		free(res);
 		return NULL;
 	}
@@ -92,7 +95,8 @@ char *get_str(FILE *stream)
 		c = getc(stream);
 		if (c == '"')
 			break;
-		if (c == EOF) {
+		if (c == EOF) 
+		{
 			free(res);
 			unexpected(stream);
 			return NULL;
@@ -110,7 +114,8 @@ char *get_str(FILE *stream)
 				c = '\\';
 			else if (c == '"')
 				c = '"';
-			else {
+			else 
+			{
 				free(res);
 				return NULL;
 			}
@@ -119,7 +124,8 @@ char *get_str(FILE *stream)
 		{
 			capacity *= 2;
 			char *new_res = realloc(res, capacity);
-			if (!new_res) {
+			if (!new_res) 
+			{
 				free(res);
 				return NULL;
 			}
@@ -223,7 +229,8 @@ int parser(json *dst, FILE *stream)
 
 int argo(json *dst, FILE *stream)
 {
-	if (!stream || !dst) {
+	if (!stream || !dst) 
+	{
 		return -1;
 	}
 	if (parser(dst, stream) == -1)

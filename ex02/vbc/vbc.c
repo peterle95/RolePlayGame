@@ -25,11 +25,10 @@ Translated with DeepL.com (free version)*/
 
 void print_list(node *list)
 {
-    if (list && !list->r && list->type == 'n') {
+    if (list && !list->r && list->type == 'n') 
         printf("%d\n", list->val);
-    } else {
+	else 
         unexpected('\0');  // Invalid result state
-    }
 }
 
 void delete_node(node **list, node *to_del)
@@ -120,20 +119,25 @@ node *parse_expr(char *s)
 	
 	while (*s) {
 		node *new_node = malloc(sizeof(node));
-		if (!new_node) {
+		if (!new_node) 
+		{
 			free_list(head);
 			exit(1);
 		}
 		
-		if (isdigit(*s)) {
+		if (isdigit(*s)) 
+		{
 			new_node->type = 'n';
 			new_node->val = *s - '0';
-		} else if (*s == '+' || *s == '*' || *s == '(' || *s == ')') {
+		} 
+		else if (*s == '+' || *s == '*' || *s == '(' || *s == ')') 
+		{
 			new_node->type = *s;
 			new_node->val = 0;
-		} else {
+		} 
+		else
 			unexpected(*s);
-		}
+		
 		
 		new_node->l = prev;
 		new_node->r = NULL;
@@ -150,7 +154,8 @@ node *parse_expr(char *s)
 
 void free_list(node *list)
 {
-	while (list) {
+	while (list) 
+	{
 		node *next = list->r;
 		free(list);
 		list = next;
@@ -166,7 +171,6 @@ void unexpected(char c)
 	exit(1);
 }
 
-// Add parentheses validation
 int is_balanced(char *s)
 {
     int count = 0;
