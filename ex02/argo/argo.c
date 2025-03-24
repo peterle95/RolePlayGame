@@ -56,26 +56,46 @@ int	parse_int(json *dst, FILE *stream)
 
 char *get_str(FILE *stream)
 {
-	char *res = calloc(4096, sizeof(char));
-	int i = 0;
-	char c = getc(stream);
+	size_t capacity = 16;
+	size_t i = 0;
+	char *res = malloc(capacity);
+	if (!res) return NULL;
+	
+	int c = getc(stream); // Consume opening quote
+	if (c != '"') {
+		free(res);
+		return NULL;
+	}
 
-	while (1)
-	{
+	while (1) {
 		c = getc(stream);
-		
-		if (c == '"')
-			break ;
-		if (c == EOF)
-		{
+		if (c == '"') break;
+		if (c == EOF) {
+			free(res);
 			unexpected(stream);
 			return NULL;
 		}
-		if (c == '\\')
+		if (c == '\\') {
 			c = getc(stream);
+			if (c == EOF) {
+				free(res);
+				unexpected(stream);
+				return NULL;
+			}
+		}
+		if (i >= capacity-1) {
+			capacity *= 2;
+			char *new_res = realloc(res, capacity);
+			if (!new_res) {
+				free(res);
+				return NULL;
+			}
+			res = new_res;
+		}
 		res[i++] = c;
 	}
-	return (res);
+	res[i] = '\0';
+	return res;
 }
 
 int parse_map(json *dst, FILE *stream)
@@ -83,6 +103,9 @@ int parse_map(json *dst, FILE *stream)
 	dst->type = MAP;
 	dst->map.size = 0;
 	dst->map.data = NULL;
+	
+	if (!expect(stream, '{')) return -1;
+
 	char c = getc(stream);
 
 	if (peek(stream) == '}')
@@ -90,13 +113,15 @@ int parse_map(json *dst, FILE *stream)
 
 	while (1)
 	{
-		c = peek(stream);
-		if (c != '"')
-		{
+		if (peek(stream) != '"') {
 			unexpected(stream);
 			return -1;
 		}
-		dst->map.data = realloc(dst->map.data, (dst->map.size + 1) * sizeof(pair));
+		pair *new_data = realloc(dst->map.data, (dst->map.size+1)*sizeof(pair));
+		if (new_data == NULL) {
+			return -1;
+		}
+		dst->map.data = new_data;
 		pair *current = &dst->map.data[dst->map.size];
 		current->key = get_str(stream);
 		if (current->key == NULL)
@@ -137,10 +162,8 @@ int parser(json *dst, FILE *stream)
 	else if (c == '"')
 	{
 		dst->type = STRING;
-		dst->string = get_str(stream);
-		if (dst->string == NULL)
-			return (-1);
-		return (1);
+		if (!(dst->string = get_str(stream))) return -1;
+		return 1;
 	}
 	else if (c == '{')
 		return (parse_map(dst, stream));
