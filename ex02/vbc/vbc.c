@@ -25,15 +25,11 @@ Translated with DeepL.com (free version)*/
 
 void print_list(node *list)
 {
-	while (list)
-	{
-		if (list->type == 'n')
-			printf("%d ", list->val);
-		else
-			printf("%c ", list->type);
-		list = list->r;
-	}
-	printf("\n");
+    if (list && !list->r && list->type == 'n') {
+        printf("%d\n", list->val);
+    } else {
+        unexpected('\0');  // Invalid result state
+    }
 }
 
 void delete_node(node **list, node *to_del)
@@ -124,7 +120,10 @@ node *parse_expr(char *s)
 	
 	while (*s) {
 		node *new_node = malloc(sizeof(node));
-		if (!new_node) exit(1);
+		if (!new_node) {
+			free_list(head);
+			exit(1);
+		}
 		
 		if (isdigit(*s)) {
 			new_node->type = 'n';
@@ -167,9 +166,22 @@ void unexpected(char c)
 	exit(1);
 }
 
+// Add parentheses validation
+int is_balanced(char *s)
+{
+    int count = 0;
+    while (*s) {
+        if (*s == '(') count++;
+        else if (*s == ')') count--;
+        if (count < 0) return 0;
+        s++;
+    }
+    return count == 0;
+}
+
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc != 2 || !is_balanced(argv[1]))
         return (1);
     node *list = parse_expr(argv[1]);
     if (!list)
