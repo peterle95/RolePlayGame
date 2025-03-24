@@ -10,10 +10,10 @@ The second pass calculates the '+'.
 
 parenthesis calculates parentheses;
 Scanning the list from left to right, we find the first ')'. Then scroll from right to left to find '('.
-We retrieve the result of the expression between these parentheses with op_plus_etoile. The result is stored in the element to the right of '('.
+We retrieve the result of the expression between these parentheses with op_plus_star. The result is stored in the element to the right of '('.
 The '(' element and the element to the right of it are deleted.
 
-We return to the beginning. do it again, until no parentheses remain. op_plus_etoile calculates the final result.
+We return to the beginning. do it again, until no parentheses remain. op_plus_star calculates the final result.
 ---------------------------------------------
 
 The logic of this code is simple(?) but time-consuming. It consumes a lot of resources and time, and is likely to timeout at the exam lol!
@@ -49,7 +49,7 @@ void delete_node(node **list, node *to_del)
 	free(to_del);
 }
 
-void op_plus_etoile(node **list)//calcul pour une expression sans parenthese
+void op_plus_star(node **list)
 {
 	node *scan = *list;
 	node *reset = NULL;
@@ -63,7 +63,7 @@ void op_plus_etoile(node **list)//calcul pour une expression sans parenthese
 			reset = scan->l;
 			reset->val = res;
 			reset->type = 'n';
-			next = scan->r->r;//peut etre NULL
+			next = scan->r->r;
 
 			delete_node(list, scan->r);
 			delete_node(list, scan);
@@ -102,7 +102,7 @@ void parenthesis(node **list)
 		{
 			while (scan && scan->type != '(')
 				scan = scan->l;
-			op_plus_etoile(&(scan->r));
+			op_plus_star(&(scan->r));
 			delete_node(list, scan->r->r);
 			delete_node(list, scan);
 			scan = *list;
@@ -117,7 +117,8 @@ node *parse_expr(char *s)
 	node *head = NULL;
 	node *prev = NULL;
 	
-	while (*s) {
+	while (*s) 
+	{
 		node *new_node = malloc(sizeof(node));
 		if (!new_node) 
 		{
@@ -174,7 +175,8 @@ void unexpected(char c)
 int is_balanced(char *s)
 {
     int count = 0;
-    while (*s) {
+    while (*s) 
+	{
         if (*s == '(') count++;
         else if (*s == ')') count--;
         if (count < 0) return 0;
@@ -192,7 +194,7 @@ int main(int argc, char **argv)
         return (1);
     
     parenthesis(&list);
-    op_plus_etoile(&list);
+    op_plus_star(&list);
     print_list(list);
     free_list(list);
     return (0);
