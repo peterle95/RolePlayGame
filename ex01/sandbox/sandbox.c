@@ -24,16 +24,11 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 
 	g_to = 0;
 	sa_to.sa_handler = handle_timeout;
-	if (sigemptyset(&sa_to.sa_mask) == -1)
-	{
-		if (verbose)
-			perror("sigemptyset failed");
-		return (-1);
-	}
+	sa_to.sa_mask.__val[0] = 0; // Manually initialize signal mask instead of sigemptyset
 	if (sigaction(SIGALRM, &sa_to, NULL) == -1)
 	{
 		if (verbose)
-			perror("sigaction failed");
+			printf("sigaction failed: %s\n", strsignal(errno)); // Replace perror
 		return (-1);
 	}
 	
