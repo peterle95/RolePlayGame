@@ -6,6 +6,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <malloc.h>
+#include <ctype.h>
+#include <stdlib.h>
 
 
 typedef struct	json {
