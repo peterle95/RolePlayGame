@@ -77,10 +77,18 @@ char *get_str(FILE *stream)
 		}
 		if (c == '\\') {
 			c = getc(stream);
-			if (c == EOF) {
-				free(res);
-				unexpected(stream);
-				return NULL;
+			switch (c) {
+				case '\\': c = '\\'; break;
+				case '"':  c = '"';  break;
+				case '/':  c = '/';  break;
+				case 'b':  c = '\b'; break;
+				case 'f':  c = '\f'; break;
+				case 'n':  c = '\n'; break;
+				case 'r':  c = '\r'; break;
+				case 't':  c = '\t'; break;
+				default:
+					free(res);
+					return NULL; // Invalid escape
 			}
 		}
 		if (i >= capacity-1) {
@@ -106,10 +114,9 @@ int parse_map(json *dst, FILE *stream)
 	
 	if (!expect(stream, '{')) return -1;
 
-	char c = getc(stream);
-
-	if (peek(stream) == '}')
+	if (accept(stream, '}')) {
 		return 1;
+	}
 
 	while (1)
 	{
@@ -117,12 +124,15 @@ int parse_map(json *dst, FILE *stream)
 			unexpected(stream);
 			return -1;
 		}
+		char c;
 		pair *new_data = realloc(dst->map.data, (dst->map.size+1)*sizeof(pair));
-		if (new_data == NULL) {
+		if (!new_data) {
+			free(dst->map.data);
 			return -1;
 		}
 		dst->map.data = new_data;
 		pair *current = &dst->map.data[dst->map.size];
+		memset(current, 0, sizeof(pair));
 		current->key = get_str(stream);
 		if (current->key == NULL)
 			return -1;
@@ -178,6 +188,9 @@ int parser(json *dst, FILE *stream)
 //free_json() added in the main
 int argo(json *dst, FILE *stream)
 {
+	if (!stream || !dst) {
+		return -1;
+	}
 	if (parser(dst, stream) == -1)
 		return -1;
 	return 1;
