@@ -1,201 +1,208 @@
-/*This problem is similar to leetcode224.
------------------------------------------
 
-Each character of argv[1] is contained in an element of a double-chained list.
+//This file is given at the exam
 
-The op_plus_star function calculates an expression up to the end of the string or ')' by making two passes.
-The first calculates multiplication; when '*' is found, the result between the number on the left and the number on the right is stored in the element on the left.
-The sign and the right element are removed from the list. The list is chained again.
-The second pass calculates the '+'.
+#include <stdio.h>
+#include <malloc.h>
+#include <ctype.h>
 
-parenthesis calculates parentheses;
-Scanning the list from left to right, we find the first ')'. Then scroll from right to left to find '('.
-We retrieve the result of the expression between these parentheses with op_plus_star. The result is stored in the element to the right of '('.
-The '(' element and the element to the right of it are deleted.
+typedef struct node {
+    enum {
+        ADD,
+        MULTI,
+        VAL
+    }   type;
+    int val;
+    struct node *l;
+    struct node *r;
+}   node;
 
-We return to the beginning. do it again, until no parentheses remain. op_plus_star calculates the final result.
----------------------------------------------
-
-The logic of this code is simple(?) but time-consuming. It consumes a lot of resources and time, and is likely to timeout at the exam lol!
-But it has been accepted at leetcode
-
-Translated with DeepL.com (free version)*/
-
-#include "vbc.h"
-
-void print_list(node *list)
+node    *new_node(node n)
 {
-    if (list && !list->r && list->type == 'n') 
-        printf("%d\n", list->val);
-	else 
-        unexpected('\0');  // Invalid result state
+    node *ret = calloc(1, sizeof(n));
+    if (!ret)
+        return (NULL);
+    *ret = n;
+    return (ret);
 }
 
-void delete_node(node **list, node *to_del)
+void    destroy_tree(node *n)
 {
-	if (!*list || !to_del)
-		return ;
-
-	node *prev = to_del->l;
-	node *next = to_del->r;
-
-	if (prev)
-		prev->r = next;
-	else
-		*list = next;
-	if (next)
-		next->l = prev;
-	
-	free(to_del);
+    if (!n)
+        return ;
+    if (n->type != VAL)
+    {
+        destroy_tree(n->l);
+        destroy_tree(n->r);
+    }
+    free(n);
 }
 
-void op_plus_star(node **list)
+void    unexpected(char c)
 {
-	node *scan = *list;
-	node *reset = NULL;
-	node *next = NULL;
-
-	while (scan && scan->type != ')')
-	{
-		if (scan->type == '*')
-		{
-			int res = scan->l->val * scan->r->val;
-			reset = scan->l;
-			reset->val = res;
-			reset->type = 'n';
-			next = scan->r->r;
-
-			delete_node(list, scan->r);
-			delete_node(list, scan);
-			scan = next;
-		}
-		else
-			scan = scan->r;
-	}
-	scan = *list;
-	while (scan && scan->type != ')')
-	{
-		if (scan->type == '+')
-		{
-			int res = scan->l->val + scan->r->val;
-			reset = scan->l;
-			reset->val = res;
-			reset->type = 'n';
-			next = scan->r->r;
-
-			delete_node(list, scan->r);
-			delete_node(list, scan);
-			scan = next;
-		}
-		else
-			scan = scan->r;
-	}
+    if (c)
+        printf("Unexpected token '%c'\n", c);
+    else
+        printf("Unexpected end of file\n");
 }
 
-void parenthesis(node **list)
+int accept(char **s, char c)
 {
-	node *scan = *list;
+    if (**s)
+    {
+        (*s)++;
+        return (1);
+    }
+    return (0);
+}
 
-	while (scan)
-	{
-		if (scan->type == ')')
-		{
-			while (scan && scan->type != '(')
-				scan = scan->l;
-			op_plus_star(&(scan->r));
-			delete_node(list, scan->r->r);
-			delete_node(list, scan);
-			scan = *list;
-		}
-		else
-			scan = scan->r;
-	}
+int expect(char **s, char c)
+{
+    if (accept(s, c))
+        return (1);
+    unexpected(**s);
+    return (0);
+}
+
+node *parse_term(char **s)
+{
+    node *ret = parse_factor(s);
+    
+    if (!ret)
+        return NULL;
+    
+    while (**s == '*')
+    {
+        (*s)++;
+        node *right = parse_factor(s);
+        
+        if (!right)
+        {
+            destroy_tree(ret);
+            return NULL;
+        }
+        
+        node multi_node = {
+            .type = MULTI,
+            .l = ret,
+            .r = right
+        };
+        
+        ret = new_node(multi_node);
+        
+        if (!ret)
+        {
+            destroy_tree(right);
+            return NULL;
+        }
+    }
+    
+    return ret;
+}
+
+node *parse_factor(char **s)
+{
+    if (**s == '(')
+    {
+        (*s)++;
+        node *ret = parse_expr(*s);
+        
+        if (!ret)
+            return NULL;
+        
+        while (**s && **s != ')')
+            (*s)++;
+        
+        if (**s != ')')
+        {
+            destroy_tree(ret);
+            unexpected(0);
+            return NULL;
+        }
+        
+        (*s)++;
+        return ret;
+    }
+    
+    if (isdigit(**s))
+    {
+        node val_node = {
+            .type = VAL,
+            .val = **s - '0'
+        };
+        
+        (*s)++;
+        return new_node(val_node);
+    }
+    
+    unexpected(**s);
+    return NULL;
 }
 
 node *parse_expr(char *s)
 {
-	node *head = NULL;
-	node *prev = NULL;
-	
-	while (*s) 
-	{
-		node *new_node = malloc(sizeof(node));
-		if (!new_node) 
-		{
-			free_list(head);
-			exit(1);
-		}
-		
-		if (isdigit(*s)) 
-		{
-			new_node->type = 'n';
-			new_node->val = *s - '0';
-		} 
-		else if (*s == '+' || *s == '*' || *s == '(' || *s == ')') 
-		{
-			new_node->type = *s;
-			new_node->val = 0;
-		} 
-		else
-			unexpected(*s);
-		
-		
-		new_node->l = prev;
-		new_node->r = NULL;
-		
-		if (prev)
-			prev->r = new_node;
-		else
-			head = new_node;
-		prev = new_node;
-		s++;
-	}
-	return head;
-}
-
-void free_list(node *list)
-{
-	while (list) 
-	{
-		node *next = list->r;
-		free(list);
-		list = next;
-	}
-}
-
-void unexpected(char c)
-{
-	if (c == '\0')
-		printf("Unexpected end of input\n");
-	else
-		printf("Unexpected token '%c'\n", c);
-	exit(1);
-}
-
-int is_balanced(char *s)
-{
-    int count = 0;
-    while (*s) 
-	{
-        if (*s == '(') count++;
-        else if (*s == ')') count--;
-        if (count < 0) return 0;
-        s++;
+    char *ptr = s;
+    node *ret = parse_term(&ptr);
+    
+    if (!ret)
+        return NULL;
+    
+    while (*ptr == '+')
+    {
+        ptr++;
+        node *right = parse_term(&ptr);
+        
+        if (!right)
+        {
+            destroy_tree(ret);
+            return NULL;
+        }
+        
+        node add_node = {
+            .type = ADD,
+            .l = ret,
+            .r = right
+        };
+        
+        ret = new_node(add_node);
+        
+        if (!ret)
+        {
+            destroy_tree(right);
+            return NULL;
+        }
     }
-    return count == 0;
+    
+    if (*ptr) 
+    {
+        destroy_tree(ret);
+        unexpected(*ptr);
+        return NULL;
+    }
+    
+    return ret;
+}
+
+
+int eval_tree(node *tree)
+{
+    switch (tree->type)
+    {
+        case ADD:
+            return (eval_tree(tree->l) + eval_tree(tree->r));
+        case MULTI:
+            return (eval_tree(tree->l) * eval_tree(tree->r));
+        case VAL:
+            return (tree->val);
+    }
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 2 || !is_balanced(argv[1]))
+    if (argc != 2)
         return (1);
-    node *list = parse_expr(argv[1]);
-    if (!list)
+    node *tree = parse_expr(argv[1]);
+    if (!tree)
         return (1);
-    
-    parenthesis(&list);
-    op_plus_star(&list);
-    print_list(list);
-    free_list(list);
-    return (0);
+    printf("%d\n", eval_tree(tree));
+    destroy_tree(tree);
 }
