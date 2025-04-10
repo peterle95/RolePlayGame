@@ -1,4 +1,3 @@
-
 //This file is given at the exam
 
 #include <stdio.h>
@@ -45,9 +44,13 @@ void    unexpected(char c)
         printf("Unexpected end of file\n");
 }
 
+// Forward declarations
+node *parse_factor(char **s); // this
+node *parse_expr(char **s);
+
 int accept(char **s, char c)
 {
-    if (**s)
+    if (**s == c) // this
     {
         (*s)++;
         return (1);
@@ -63,7 +66,7 @@ int expect(char **s, char c)
     return (0);
 }
 
-node *parse_term(char **s)
+node *parse_term(char **s) // this
 {
     node *ret = parse_factor(s);
     
@@ -99,27 +102,22 @@ node *parse_term(char **s)
     return ret;
 }
 
-node *parse_factor(char **s)
+node *parse_factor(char **s) // this
 {
     if (**s == '(')
     {
         (*s)++;
-        node *ret = parse_expr(*s);
-        
+        node *ret = parse_expr(s);  
+              
         if (!ret)
             return NULL;
         
-        while (**s && **s != ')')
-            (*s)++;
-        
-        if (**s != ')')
+        if (!expect(s, ')'))
         {
             destroy_tree(ret);
-            unexpected(0);
             return NULL;
         }
         
-        (*s)++;
         return ret;
     }
     
@@ -138,18 +136,17 @@ node *parse_factor(char **s)
     return NULL;
 }
 
-node *parse_expr(char *s)
+node *parse_expr(char **s) // this
 {
-    char *ptr = s;
-    node *ret = parse_term(&ptr);
+    node *ret = parse_term(s); 
     
     if (!ret)
         return NULL;
     
-    while (*ptr == '+')
+    while (**s == '+')
     {
-        ptr++;
-        node *right = parse_term(&ptr);
+        (*s)++;
+        node *right = parse_term(s);
         
         if (!right)
         {
@@ -171,17 +168,8 @@ node *parse_expr(char *s)
             return NULL;
         }
     }
-    
-    if (*ptr) 
-    {
-        destroy_tree(ret);
-        unexpected(*ptr);
-        return NULL;
-    }
-    
-    return ret;
+        return ret;
 }
-
 
 int eval_tree(node *tree)
 {
@@ -194,15 +182,28 @@ int eval_tree(node *tree)
         case VAL:
             return (tree->val);
     }
+    return 0;
 }
 
 int main(int argc, char **argv)
 {
     if (argc != 2)
         return (1);
-    node *tree = parse_expr(argv[1]);
+    
+    char *expr_str = argv[1]; // this
+    node *tree = parse_expr(&expr_str); 
+    
     if (!tree)
         return (1);
+        
+    if (*expr_str != '\0') // this
+    {
+        unexpected(*expr_str);
+        destroy_tree(tree);
+        return (1);
+    }
+    
     printf("%d\n", eval_tree(tree));
     destroy_tree(tree);
+    return (0); // this
 }
