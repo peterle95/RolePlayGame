@@ -187,8 +187,15 @@ int parse_map(json *dst, FILE *stream)
 			accept(stream, c);
 			break;
 		}
-		if (c == ',')
+		else if (c == ',')
+		{
 			accept(stream, ',');
+			c = peek(stream);
+			if (c != '"') {
+				unexpected(stream);
+				return -1;
+			}
+		}
 		else
 		{
 			unexpected(stream);
