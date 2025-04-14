@@ -24,7 +24,8 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 
 	g_to = 0;
 	sa_to.sa_handler = handle_timeout;
-	sa_to.sa_mask.__val[0] = 0; // Manually initialize signal mask instead of sigemptyset
+	sa_to.sa_mask.__val[0] = 0;
+
 	if (sigaction(SIGALRM, &sa_to, NULL) == -1)
 	{
 		if (verbose)
@@ -34,6 +35,7 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 	
 	if ((pid = fork()) == -1)
 		return (-1);
+
 	if (pid == 0)
 	{
 		f();
@@ -43,8 +45,10 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 	
 	if (waitpid(pid, &status, 0) == -1)
 	{
+
 		while (1)
 		{
+
 			if (errno == EINTR && g_to)
 			{
 				if (verbose)
@@ -72,6 +76,7 @@ int	sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 	}
 	else
 	{
+		
 		if (WIFSIGNALED(status))
 		{
 			if (verbose)
