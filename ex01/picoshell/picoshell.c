@@ -5,7 +5,12 @@
 
 int picoshell(char **cmds[])
 {
+	// Check for NULL input (new)
+    if (cmds == NULL)
+		return 1;
+	
 	int num_cmds = 0;
+
 	while (cmds[num_cmds] != NULL)
 	{
 		if (cmds[num_cmds][0] == NULL || cmds[num_cmds][0][0] == '\0')
@@ -23,8 +28,10 @@ int picoshell(char **cmds[])
 	for (int i = 0; i < num_cmds; i++)
 	{
 		int curr_pipe[2];
+
 		if (i < num_cmds - 1) 
 		{
+
 			if (pipe(curr_pipe) == -1) 
 			{
 				close(prev_pipe_read);
@@ -36,25 +43,31 @@ int picoshell(char **cmds[])
 		}
 	
 		pids[i] = fork();
+
 		if ((pids[i] == -1)) 
 		{
 			close(prev_pipe_read);
+
 			if (i < num_cmds - 1) 
 			{
 				close(curr_pipe[0]);
 				close(curr_pipe[1]);
 			}
+
 			for (int j = 0; j < i; j++) 
 				waitpid(pids[j], NULL, 0);
 			return 1;
 		}
+
 		if (pids[i] == 0) 
 		{
-			if (i > 0) {
+			if (i > 0) 
+			{
 				if (dup2(prev_pipe_read, 0) == -1)
 					exit(1);
 				close(prev_pipe_read);
 			}
+
 			if (i < num_cmds - 1) 
 			{
 				if (dup2(curr_pipe[1], 1) == -1)
@@ -73,6 +86,7 @@ int picoshell(char **cmds[])
 		{
 			if (i > 0)
 				close(prev_pipe_read);
+			
 			if (i < num_cmds - 1) 
 			{
 				close(curr_pipe[1]);
