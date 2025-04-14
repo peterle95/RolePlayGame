@@ -10,7 +10,7 @@ int peek(FILE *stream)
 	return c;
 }
 
-void unexpected(FILE *stream)
+void unexpected(FILE *stream) // this
 {
 	if (!stream)
 	{
@@ -26,7 +26,7 @@ void unexpected(FILE *stream)
 
 int accept(FILE *stream, char c)
 {
-	if (!stream)
+	if (!stream) // this
 		return 0;
 	if (peek(stream) == c)
 	{
@@ -38,7 +38,7 @@ int accept(FILE *stream, char c)
 
 int expect(FILE *stream, char c)
 {
-	if (!stream)
+	if (!stream) // this
 	{
 		unexpected(stream);
 		return 0;
@@ -49,7 +49,7 @@ int expect(FILE *stream, char c)
 	return 0;
 }
 
-int parse_int(json *dst, FILE *stream)
+int parse_int(json *dst, FILE *stream) // this
 {
 	if (!dst || !stream)
 		return -1;
@@ -74,7 +74,7 @@ int parse_int(json *dst, FILE *stream)
 	return 1;
 }
 
-char *get_str(FILE *stream)
+char *get_str(FILE *stream) // this
 {
 	if (!stream)
 		return NULL;
@@ -137,10 +137,11 @@ char *get_str(FILE *stream)
 	return res;
 }
 
-int parse_map(json *dst, FILE *stream)
+int parse_map(json *dst, FILE *stream) // this
 {
 	if (!dst || !stream)
 		return -1;
+	
 	dst->type = MAP;
 	dst->map.size = 0;
 	dst->map.data = NULL;
@@ -158,8 +159,10 @@ int parse_map(json *dst, FILE *stream)
 			unexpected(stream);
 			return -1;
 		}
+
 		int c;
 		pair *new_data = realloc(dst->map.data, (dst->map.size + 1) * sizeof(pair));
+
 		if (!new_data)
 		{
 			free(dst->map.data);
@@ -176,11 +179,14 @@ int parse_map(json *dst, FILE *stream)
 		current->key = get_str(stream);
 		if (current->key == NULL)
 			return -1;
+		
 		dst->map.size++;
+
 		if (expect(stream, ':') == 0)
 			return -1;
 		if (argo(&current->value, stream) == -1)
 			return -1;
+		
 		c = peek(stream);
 		if (c == '}')
 		{
@@ -191,7 +197,9 @@ int parse_map(json *dst, FILE *stream)
 		{
 			accept(stream, ',');
 			c = peek(stream);
-			if (c != '"') {
+
+			if (c != '"') 
+			{
 				unexpected(stream);
 				return -1;
 			}
@@ -205,7 +213,7 @@ int parse_map(json *dst, FILE *stream)
 	return 1;
 }
 
-int parser(json *dst, FILE *stream)
+int parser(json *dst, FILE *stream) // this
 {
 	if (!dst || !stream)
 		return -1;
@@ -216,6 +224,7 @@ int parser(json *dst, FILE *stream)
 		unexpected(stream);
 		return -1;
 	}
+
 	if (isdigit(c))
 		return (parse_int(dst, stream));
 	else if (c == '"')
@@ -234,12 +243,10 @@ int parser(json *dst, FILE *stream)
 	return (1);
 }
 
-int argo(json *dst, FILE *stream)
+int argo(json *dst, FILE *stream) // this
 {
 	if (!stream || !dst) 
-	{
 		return -1;
-	}
 	if (parser(dst, stream) == -1)
 		return -1;
 	return 1;
