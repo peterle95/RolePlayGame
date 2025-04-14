@@ -13,6 +13,9 @@ int picoshell(char **cmds[])
 
 	while (cmds[num_cmds] != NULL)
 	{
+		if(cmds[num_cmds == NULL]) // new
+			return 1;
+	
 		if (cmds[num_cmds][0] == NULL || cmds[num_cmds][0][0] == '\0')
 			return 1;
 		num_cmds++;
