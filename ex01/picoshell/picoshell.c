@@ -116,7 +116,8 @@ int picoshell(char **cmds[])
 	*/
   	for (int i = 0; i < num_cmds; i++) // everything marked as 1 when error
 	{
-		if (waitpid(pids[i], &status, 0) == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		if (waitpid(pids[i], &status, 0) == -1 || !WIFEXITED(status) 
+				|| WEXITSTATUS(status) != 0)
 			final_status = 1;
 	}
 	
