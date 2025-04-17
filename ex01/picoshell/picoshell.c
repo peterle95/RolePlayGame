@@ -13,7 +13,7 @@ int picoshell(char **cmds[])
 
 	while (cmds[num_cmds] != NULL)
 	{
-		if(cmds[num_cmds == NULL]) // new
+		if(cmds[num_cmds] == NULL) // new
 			return 1;
 	
 		if (cmds[num_cmds][0] == NULL || cmds[num_cmds][0][0] == '\0')
@@ -47,7 +47,7 @@ int picoshell(char **cmds[])
 	
 		pids[i] = fork();
 
-		if ((pids[i] == -1)) 
+		if (pids[i] == -1) 
 		{
 			close(prev_pipe_read);
 
