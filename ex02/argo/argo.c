@@ -1,4 +1,11 @@
 #include "argo.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include <ctype.h>
+#include <string.h>
+#include <malloc.h>
+#include <ctype.h>
+#include <stdlib.h>
 
 int peek(FILE *stream)
 {
