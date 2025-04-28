@@ -62,12 +62,11 @@ int parse_int(json *dst, FILE *stream) // this
 		return -1;
 	}
 	
-	while (isdigit(c)) 
-	{
-		getc(stream);
-		n = n * 10 + (c - '0');
-		c = peek(stream);
-	}
+	while (isdigit(c = peek(stream)))
+    {
+        getc(stream); // Consume the digit
+        n = n * 10 + (c - '0');
+    }
 	
 	dst->type = INTEGER;
 	dst->integer = n;
@@ -78,86 +77,86 @@ char *get_str(FILE *stream) // this
 {
 	if (!stream)
 		return NULL;
+
 	size_t capacity = 16;
 	size_t i = 0;
 	char *res = malloc(capacity);
 	if (!res)
 		return NULL;
 
-	// Expect opening quote
 	if (getc(stream) != '"') 
 	{
-		// Put back the character we read if it wasn't a quote
-		// Note: This part is tricky, ideally expect() should be used before calling get_str
-		// For simplicity here, assume caller ensured the first char is '"'
-		// Or, modify the caller logic. Let's assume the call is correct for now.
-		// If the first character wasn't '"', it's an error state.
 		free(res);
-		// We don't have the unexpected char, so can't report it easily here.
-		// Return NULL, the caller should handle the error.
 		return NULL;
 	}
 
-	while (1) {
+	while (1) 
+	{
 		int c = getc(stream);
-		if (c == '"') // End of string
+
+		if (c == '"')
 			break;
+
 		if (c == EOF)
 		{
 			free(res);
-			unexpected(stream); // Report unexpected EOF
+			unexpected(stream);
 			return NULL;
 		}
-		if (c == '\\') // Handle escape sequences
+
+		if (c == '\\')
 		{
 			c = getc(stream);
+
 			if (c == EOF)
 			{
 				free(res);
 				unexpected(stream);
 				return NULL;
 			}
+
 			switch(c) {
-				case '\\': // Fallthrough
-				case '"':  // Fallthrough
-				case '/':  // Keep c as is ('\\', '"', '/')
+				case '\\':
+				case '"':
+				case '/':
 					break;
 				case 'b': c = '\b'; break;
 				case 'f': c = '\f'; break;
 				case 'n': c = '\n'; break;
 				case 'r': c = '\r'; break;
 				case 't': c = '\t'; break;
-				// case 'u': // \uXXXX handling is more complex, skip for now
-				//     break;
-				default: // Invalid escape sequence
+				default:
 					printf("Error: Invalid escape sequence '\\%c'\n", c);
 					free(res);
-					// We consumed the invalid char, so unexpected() might not see it
 					return NULL;
 			}
 		}
-		// Resize buffer if needed
+
 		if (i >= capacity - 1)
 		{
 			capacity *= 2;
-			// Check for potential overflow if capacity becomes huge
-			if (capacity < i + 1) {
-				fprintf(stderr, "Error: String too large, capacity overflow.\n");
+
+			if (capacity < i + 1) 
+			{
+				printf("Error: String too large, capacity overflow.\n");
 				free(res);
 				return NULL;
 			}
+
 			char *new_res = realloc(res, capacity);
+
 			if (!new_res)
 			{
 				free(res);
 				printf("realloc failed in get_str");
 				return NULL;
 			}
+
 			res = new_res;
 		}
-		res[i++] = (char)c; // Store the character (original or escaped)
+		res[i++] = (char)c;
 	}
-	res[i] = '\0'; // Null-terminate the string
+	res[i] = '\0';
 	return res;
 }
 
@@ -173,97 +172,69 @@ int parse_map(json *dst, FILE *stream) // this
 	if (!expect(stream, '{'))
 		return -1;
 
-	// Handle empty map {}
 	if (accept(stream, '}'))
 		return 1;
 
 	while (1)
 	{
-		// Allocate space for the new pair *before* parsing key/value
 		pair *new_data = realloc(dst->map.data, (dst->map.size + 1) * sizeof(pair));
+
 		if (!new_data)
 		{
-			// realloc failed, cleanup already parsed pairs if any
-			// The current dst->map.data is still valid if realloc failed
-			free_json(*dst); // Use free_json to clean up what we have
-			dst->map.data = NULL; // Ensure data pointer is NULL after freeing
+			free_json(*dst);
+			dst->map.data = NULL;
 			dst->map.size = 0;
 			printf("realloc failed in parse_map");
 			return -1;
 		}
 		dst->map.data = new_data;
 
-		// Get pointer to the potential new pair slot
 		pair *current = &dst->map.data[dst->map.size];
-		// Initialize fields to safe values
-		current->key = NULL;
-		current->value = (json){ .type = INTEGER, .integer = 0 }; // Default init
 
-		// 1. Parse Key (must be a string)
+		current->key = NULL;
+		current->value = (json){ .type = INTEGER, .integer = 0 };
+
 		if (peek(stream) != '"')
 		{
 			unexpected(stream);
-			// No key was allocated yet, just return
-			// Note: The realloc happened, but we haven't increased size.
-			// free_json called by caller will handle existing pairs.
 			return -1;
 		}
+
 		current->key = get_str(stream);
 		if (current->key == NULL)
-		{
-			// get_str failed (might have printed error)
-			// No need to free current->key as it's NULL
-			return -1; // Let caller handle cleanup via free_json
-		}
+			return -1;
 
-		// 2. Parse Separator ':'
 		if (!expect(stream, ':'))
 		{
-			// Failed to find ':', need to free the key we just allocated
-			free(current->key);
-			current->key = NULL; // Prevent double free by caller's free_json
-			return -1; // Let caller handle cleanup
-		}
-
-		// 3. Parse Value
-		if (argo(&current->value, stream) == -1)
-		{
-			// Failed to parse value, need to free the key
 			free(current->key);
 			current->key = NULL;
-			// The current->value might be partially filled, free_json in caller might fail
-			// It's safer if argo ensures dst is cleaned/reset on failure. Assume it does for now.
-			return -1; // Let caller handle cleanup
+			return -1;
 		}
 
-		// Key-Value pair successfully parsed, *now* increment size
+		if (argo(&current->value, stream) == -1)
+		{
+			free(current->key);
+			current->key = NULL;
+			return -1;
+		}
+
 		dst->map.size++;
 
-		// 4. Check for map end '}' or next element ','
 		int c = peek(stream);
 		if (c == '}')
-		{
-			(void)getc(stream); // Consume '}'
-			break; // Map finished successfully
-		}
-
-		if (c == ',')
-		{
-			(void)getc(stream); // Consume ','
-			// Continue loop for the next pair
-		}
+        {
+            getc(stream);
+            break;
+        }
+        else if (c == ',')
+            getc(stream);
 		else
 		{
-			// Unexpected character after value
 			unexpected(stream);
-			// Need to cleanup the last successfully parsed pair (key+value)
-			// This is tricky because free_json expects a full map.
-			// Instead of cleaning here, rely on caller calling free_json.
-			// The state dst has size incremented, includes the last pair.
 			return -1;
 		}
 	}
-	return 1; // Map parsed successfully
+	return 1;
 }
 
 int parser(json *dst, FILE *stream) // this
@@ -283,7 +254,8 @@ int parser(json *dst, FILE *stream) // this
 	else if (c == '"')
 	{
 		dst->type = STRING;
-		if (!(dst->string = get_str(stream))) return -1;
+		if (!(dst->string = get_str(stream))) 
+			return -1;
 		return 1;
 	}
 	else if (c == '{')
@@ -293,20 +265,16 @@ int parser(json *dst, FILE *stream) // this
 		unexpected(stream);
 		return -1;
 	}
-	return (1);
+	return 1;
 }
 
 int argo(json *dst, FILE *stream) // this
 {
 	if (!stream || !dst)
 		return -1;
-	// Initialize dst to a safe default state before parsing
+
 	*dst = (json){ .type = INTEGER, .integer = 0 };
 	if (parser(dst, stream) == -1)
-	{
-		// If parser fails, it might have partially filled dst.
-		// free_json might be needed, but let the caller handle it.
 		return -1;
-	}
 	return 1;
 }
