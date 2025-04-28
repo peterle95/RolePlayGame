@@ -130,7 +130,7 @@ char *get_str(FILE *stream) // this
 				// case 'u': // \uXXXX handling is more complex, skip for now
 				//     break;
 				default: // Invalid escape sequence
-					fprintf(stderr, "Error: Invalid escape sequence '\\%c'\n", c);
+					printf("Error: Invalid escape sequence '\\%c'\n", c);
 					free(res);
 					// We consumed the invalid char, so unexpected() might not see it
 					return NULL;
@@ -150,7 +150,7 @@ char *get_str(FILE *stream) // this
 			if (!new_res)
 			{
 				free(res);
-				perror("realloc failed in get_str");
+				printf("realloc failed in get_str");
 				return NULL;
 			}
 			res = new_res;
@@ -188,7 +188,7 @@ int parse_map(json *dst, FILE *stream) // this
 			free_json(*dst); // Use free_json to clean up what we have
 			dst->map.data = NULL; // Ensure data pointer is NULL after freeing
 			dst->map.size = 0;
-			perror("realloc failed in parse_map");
+			printf("realloc failed in parse_map");
 			return -1;
 		}
 		dst->map.data = new_data;
