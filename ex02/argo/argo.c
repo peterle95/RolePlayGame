@@ -62,11 +62,13 @@ int parse_int(json *dst, FILE *stream) // this
 		return -1;
 	}
 	
-	while (isdigit(c = peek(stream)))
-    {
-        getc(stream); // Consume the digit
-        n = n * 10 + (c - '0');
-    }
+	c = peek(stream);
+	while (isdigit(c)) 
+	{
+    	getc(stream);
+    	n = n * 10 + (c - '0');
+    	c = peek(stream);
+	}
 	
 	dst->type = INTEGER;
 	dst->integer = n;
@@ -148,7 +150,7 @@ char *get_str(FILE *stream) // this
 			if (!new_res)
 			{
 				free(res);
-				printf("realloc failed in get_str");
+				printf("realloc failed in get_str\n");
 				return NULL;
 			}
 
@@ -192,7 +194,8 @@ int parse_map(json *dst, FILE *stream) // this
 		pair *current = &dst->map.data[dst->map.size];
 
 		current->key = NULL;
-		current->value = (json){ .type = INTEGER, .integer = 0 };
+		current->value.type = INTEGER;
+		current->value.integer = 0;
 
 		if (peek(stream) != '"')
 		{
